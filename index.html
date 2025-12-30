@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KitTrack Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-100">
+
+<!-- LOGIN -->
+<div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60">
+  <div class="bg-white p-6 rounded w-80">
+    <h2 class="text-xl font-bold mb-4 text-center">KitTrack Pro</h2>
+    <button onclick="login('line-leader')" class="w-full mb-2 bg-blue-600 text-white py-2 rounded">Line Leader</button>
+    <button onclick="login('data-incharge')" class="w-full mb-2 bg-green-600 text-white py-2 rounded">Data Incharge</button>
+    <button onclick="login('manager')" class="w-full bg-purple-600 text-white py-2 rounded">Manager</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-container" class="hidden flex h-screen">
+
+  <!-- LEFT -->
+  <aside class="w-64 bg-gray-800 text-white p-4">
+    <h3 class="font-bold mb-3">Kitting Details</h3>
+    <div id="kit-list" class="space-y-2"></div>
+    <button id="add-kit-btn" onclick="openModal()" class="mt-3 w-full bg-green-600 py-1 rounded hidden">
+      + Add Kit
+    </button>
+  </aside>
+
+  <!-- RIGHT -->
+  <main class="flex-1 p-6 overflow-y-auto">
+
+    <!-- LINE LEADER -->
+    <div id="line-leader-view" class="hidden">
+      <h2 class="text-xl font-bold mb-4">Shift End Entry</h2>
+
+      <div class="bg-white p-4 rounded shadow grid gap-3">
+        <select id="line-select" class="border p-2 rounded">
+          <option value="">Select Line</option>
+          <option value="Line-1">Line 1</option>
+          <option value="Line-2">Line 2</option>
+          <option value="Line-3">Line 3</option>
+        </select>
+
+        <select id="kit-select" class="border p-2 rounded"></select>
+
+        <input id="input-used" type="number" placeholder="Input Used" class="border p-2 rounded">
+        <input id="output" type="number" placeholder="Output" class="border p-2 rounded">
+        <input id="rejection" type="number" placeholder="Rejection" class="border p-2 rounded">
+        <input id="semifg" type="number" placeholder="Semi-FG" class="border p-2 rounded">
+
+        <button onclick="submitReport()" class="bg-blue-600 text-white py-2 rounded">
+          Submit
+        </button>
+
+        <p id="ll-msg" class="text-sm font-bold"></p>
+      </div>
+    </div>
+
+    <!-- DATA INCHARGE -->
+    <div id="data-incharge-view" class="hidden">
+      <h2 class="text-xl font-bold mb-4">Data Incharge Dashboard</h2>
+      <div id="data-table"></div>
+    </div>
+
+    <!-- MANAGER -->
+    <div id="manager-view" class="hidden">
+      <h2 class="text-xl font-bold mb-4">Manager – Line Wise View</h2>
+
+      <div class="flex gap-2 mb-3">
+        <input type="date" id="filter-date" class="border p-1">
+        <select id="filter-line" class="border p-1">
+          <option value="">All Lines</option>
+          <option value="Line-1">Line 1</option>
+          <option value="Line-2">Line 2</option>
+          <option value="Line-3">Line 3</option>
+        </select>
+        <button onclick="exportExcel()" class="bg-green-600 text-white px-3 rounded">Export Excel</button>
+      </div>
+
+      <div id="manager-table"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="kit-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+  <div class="bg-white p-6 rounded w-80">
+    <h3 class="font-bold mb-3">New Kit</h3>
+    <input id="kit-id" placeholder="Kit ID" class="border p-2 w-full mb-2">
+    <input id="kit-model" placeholder="Model" class="border p-2 w-full mb-2">
+    <input id="kit-qty" type="number" placeholder="Total Qty" class="border p-2 w-full mb-3">
+    <button onclick="createKit()" class="bg-green-600 text-white w-full py-2 rounded">Create</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
