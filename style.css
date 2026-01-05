@@ -1,4 +1,16 @@
-body { font-family: system-ui, sans-serif; }
-table { width:100%; border-collapse:collapse; }
-th,td { padding:8px; border-bottom:1px solid #e5e7eb; }
-th { background:#f3f4f6; }
+
+/* style.css */
+body {
+    font-family: Arial, sans-serif;
+}
+h1, h2 {
+    margin: 0;
+}
+#kit-list {
+    list-style-type: none;
+    padding: 0;
+}
+#kit-list li {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}

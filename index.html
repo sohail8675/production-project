@@ -1,105 +1,602 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KitTrack Pro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-track { background: #f8fafc; }
+    .modal { display: none; }
+    .modal.active { display: flex; }
+  </style>
 </head>
-
-<body class="bg-gray-100">
-
-<!-- LOGIN -->
-<div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60">
-  <div class="bg-white p-6 rounded w-80">
-    <h2 class="text-xl font-bold mb-4 text-center">KitTrack Pro</h2>
-    <button onclick="login('line-leader')" class="w-full mb-2 bg-blue-600 text-white py-2 rounded">Line Leader</button>
-    <button onclick="login('data-incharge')" class="w-full mb-2 bg-green-600 text-white py-2 rounded">Data Incharge</button>
-    <button onclick="login('manager')" class="w-full bg-purple-600 text-white py-2 rounded">Manager</button>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="app-container" class="hidden flex h-screen">
-
-  <!-- LEFT -->
-  <aside class="w-64 bg-gray-800 text-white p-4">
-    <h3 class="font-bold mb-3">Kitting Details</h3>
-    <div id="kit-list" class="space-y-2"></div>
-    <button id="add-kit-btn" onclick="openModal()" class="mt-3 w-full bg-green-600 py-1 rounded hidden">
-      + Add Kit
-    </button>
-  </aside>
-
-  <!-- RIGHT -->
-  <main class="flex-1 p-6 overflow-y-auto">
-
-    <!-- LINE LEADER -->
-    <div id="line-leader-view" class="hidden">
-      <h2 class="text-xl font-bold mb-4">Shift End Entry</h2>
-
-      <div class="bg-white p-4 rounded shadow grid gap-3">
-        <select id="line-select" class="border p-2 rounded">
-          <option value="">Select Line</option>
-          <option value="Line-1">Line 1</option>
-          <option value="Line-2">Line 2</option>
-          <option value="Line-3">Line 3</option>
-        </select>
-
-        <select id="kit-select" class="border p-2 rounded"></select>
-
-        <input id="input-used" type="number" placeholder="Input Used" class="border p-2 rounded">
-        <input id="output" type="number" placeholder="Output" class="border p-2 rounded">
-        <input id="rejection" type="number" placeholder="Rejection" class="border p-2 rounded">
-        <input id="semifg" type="number" placeholder="Semi-FG" class="border p-2 rounded">
-
-        <button onclick="submitReport()" class="bg-blue-600 text-white py-2 rounded">
-          Submit
-        </button>
-
-        <p id="ll-msg" class="text-sm font-bold"></p>
+<body class="bg-slate-100 text-slate-800">
+  <div id="app" class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-30" id="header" style="display:none;">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="text-2xl font-semibold text-slate-900">KitTrack Pro</div>
+        <div class="flex items-center gap-3">
+          <span id="currentRoleDisplay" class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium"></span>
+          <button id="logoutBtn" class="px-3 py-2 text-sm font-semibold bg-slate-800 text-white rounded-lg hover:bg-slate-700">Logout</button>
+        </div>
+      </div>
+    </header>
+    <!-- Login Screen -->
+    <section id="loginSection" class="min-h-screen flex items-center justify-center px-4">
+      <div class="bg-white shadow-xl rounded-xl p-8 w-full max-w-md text-center space-y-6 border border-slate-200">
+        <div>
+          <div class="text-2xl font-semibold text-slate-900">Hi BOSS Welcome to</div>
+          <div class="text-3xl font-bold text-blue-700">PRIME X</div>
+          <p class="text-slate-500 mt-2">Please Select your role </p>
+        </div>
+        <div class="space-y-3">
+          <button data-role="Line Leader" class="roleBtn w-full py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">Line Leader</button>
+          <button data-role="Data Incharge" class="roleBtn w-full py-3 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700">Data Incharge</button>
+          <button data-role="Manager" class="roleBtn w-full py-3 rounded-lg bg-slate-800 text-white font-semibold hover:bg-slate-900">Manager</button>
+        </div>
+      </div>
+    </section>
+    <!-- Main Layout -->
+    <div id="mainLayout" class="max-w-7xl mx-auto px-4 py-6 hidden">
+      <div class="grid grid-cols-12 gap-4">
+        <!-- Sidebar -->
+        <aside class="col-span-12 lg:col-span-3">
+          <div class="bg-white border border-slate-200 rounded-xl shadow-sm h-full flex flex-col">
+            <div class="p-4 border-b border-slate-200">
+              <div class="text-lg font-semibold text-slate-900">Kitting Details</div>
+              <p class="text-sm text-slate-500">All kits overview</p>
+            </div>
+            <div id="kitList" class="p-3 space-y-3 overflow-y-auto" style="max-height: calc(100vh - 200px);"></div>
+          </div>
+        </aside>
+        <!-- Content -->
+        <main class="col-span-12 lg:col-span-9 space-y-4" id="contentArea">
+          <!-- Data Incharge View -->
+          <section id="dataInchargeView" class="hidden space-y-4">
+            <div class="flex justify-between items-center">
+              <div>
+                <h2 class="text-xl font-semibold text-slate-900">Kits Management</h2>
+                <p class="text-sm text-slate-500">Create, transfer, and close kits</p>
+              </div>
+              <button id="addKitBtn" class="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700">+ Add New Kit</button>
+            </div>
+            <div id="kitDetailCard" class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+              <div id="kitDetailContent" class="text-slate-500">Select a kit from the sidebar to view details.</div>
+            </div>
+          </section>
+          <!-- Line Leader View -->
+          <section id="lineLeaderView" class="hidden space-y-4">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">Shift End Entry</h2>
+              <p class="text-sm text-slate-500">Record usage for open kits</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+              <form id="shiftForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Line</label>
+                  <select id="lineSelect" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required>
+                    <option value="">Select Line</option>
+                    <option>Line 1</option>
+                    <option>Line 2</option>
+                    <option>Line 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Line Leader Name</label>
+                  <input id="leaderName" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" placeholder="Enter name" required />
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Kit ID</label>
+                  <select id="kitSelect" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required></select>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Input Used</label>
+                  <input type="number" min="0" id="inputUsed" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Output</label>
+                  <input type="number" min="0" id="outputQty" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Rejection</label>
+                  <input type="number" min="0" id="rejectionQty" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Semi-FG</label>
+                  <input type="number" min="0" id="semiQty" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+                </div>
+                <div class="md:col-span-2 flex justify-end items-center gap-3">
+                  <div id="shiftMessage" class="text-sm font-medium"></div>
+                  <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Submit</button>
+                </div>
+              </form>
+            </div>
+          </section>
+          <!-- Manager View -->
+          <section id="managerView" class="hidden space-y-4">
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900">Production Overview</h2>
+              <p class="text-sm text-slate-500">Monitor production and kit status</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                <p class="text-sm text-slate-500">Total Production</p>
+                <div id="totalProduction" class="text-2xl font-bold text-slate-900">0</div>
+              </div>
+              <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                <p class="text-sm text-slate-500">Active Kits</p>
+                <div id="activeKits" class="text-2xl font-bold text-blue-700">0</div>
+              </div>
+              <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+                <p class="text-sm text-slate-500">Closed Kits</p>
+                <div id="closedKits" class="text-2xl font-bold text-emerald-700">0</div>
+              </div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Date</label>
+                  <input type="date" id="filterDate" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Line</label>
+                  <select id="filterLine" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2">
+                    <option value="">All Lines</option>
+                    <option>Line 1</option>
+                    <option>Line 2</option>
+                    <option>Line 3</option>
+                  </select>
+                </div>
+                <div class="flex gap-2">
+                  <button id="applyFilter" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Filter</button>
+                  <button id="exportCsv" class="w-full px-4 py-2 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-900">Export CSV</button>
+                </div>
+              </div>
+              <div class="overflow-auto">
+                <table class="min-w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50 text-left text-slate-700">
+                      <th class="px-3 py-2">Date</th>
+                      <th class="px-3 py-2">Line</th>
+                      <th class="px-3 py-2">Line Leader Name</th>
+                      <th class="px-3 py-2">Kit ID</th>
+                      <th class="px-3 py-2">Model</th>
+                      <th class="px-3 py-2">Quantity Used</th>
+                      <th class="px-3 py-2">Remaining Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
-
-    <!-- DATA INCHARGE -->
-    <div id="data-incharge-view" class="hidden">
-      <h2 class="text-xl font-bold mb-4">Data Incharge Dashboard</h2>
-      <div id="data-table"></div>
-    </div>
-
-    <!-- MANAGER -->
-    <div id="manager-view" class="hidden">
-      <h2 class="text-xl font-bold mb-4">Manager – Line Wise View</h2>
-
-      <div class="flex gap-2 mb-3">
-        <input type="date" id="filter-date" class="border p-1">
-        <select id="filter-line" class="border p-1">
-          <option value="">All Lines</option>
-          <option value="Line-1">Line 1</option>
-          <option value="Line-2">Line 2</option>
-          <option value="Line-3">Line 3</option>
-        </select>
-        <button onclick="exportExcel()" class="bg-green-600 text-white px-3 rounded">Export Excel</button>
-      </div>
-
-      <div id="manager-table"></div>
-    </div>
-
-  </main>
-</div>
-
-<!-- MODAL -->
-<div id="kit-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-  <div class="bg-white p-6 rounded w-80">
-    <h3 class="font-bold mb-3">New Kit</h3>
-    <input id="kit-id" placeholder="Kit ID" class="border p-2 w-full mb-2">
-    <input id="kit-model" placeholder="Model" class="border p-2 w-full mb-2">
-    <input id="kit-qty" type="number" placeholder="Total Qty" class="border p-2 w-full mb-3">
-    <button onclick="createKit()" class="bg-green-600 text-white w-full py-2 rounded">Create</button>
   </div>
-</div>
-
-<script src="script.js"></script>
+  <!-- Add Kit Modal -->
+  <div id="addKitModal" class="modal fixed inset-0 bg-black/40 items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-slate-900">Add New Kit</h3>
+        <button class="text-slate-500 hover:text-slate-800" onclick="closeModal('addKitModal')">✕</button>
+      </div>
+      <form id="addKitForm" class="space-y-3">
+        <div>
+          <label class="text-sm font-medium text-slate-700">Kit ID</label>
+          <input id="kitIdInput" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Model Name</label>
+          <input id="modelInput" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Total Quantity</label>
+          <input type="number" min="1" id="totalQtyInput" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Issued Line</label>
+          <select id="issuedLineInput" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required>
+            <option value="">Select Line</option>
+            <option>Line 1</option>
+            <option>Line 2</option>
+            <option>Line 3</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700" onclick="closeModal('addKitModal')">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700">Create Kit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- Transfer Modal -->
+  <div id="transferModal" class="modal fixed inset-0 bg-black/40 items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-slate-900">Transfer Remaining Kit to Other Line</h3>
+        <button class="text-slate-500 hover:text-slate-800" onclick="closeModal('transferModal')">✕</button>
+      </div>
+      <form id="transferForm" class="space-y-3">
+        <div>
+          <label class="text-sm font-medium text-slate-700">Kit ID</label>
+          <input id="transferKitId" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-100" readonly />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Model</label>
+          <input id="transferModel" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-100" readonly />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">From Line</label>
+          <input id="transferFrom" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-100" readonly />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">To Line</label>
+          <select id="transferTo" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required>
+            <option value="">Select Line</option>
+            <option>Line 1</option>
+            <option>Line 2</option>
+            <option>Line 3</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Quantity to Transfer</label>
+          <input type="number" min="0" id="transferQty" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2" required />
+          <p class="text-xs text-slate-500">Default equals remaining quantity. Partial transfer allowed.</p>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700" onclick="closeModal('transferModal')">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">Confirm Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+    // Data Management
+    const storageKey = 'kitTrackProData';
+    let currentRole = null;
+    let selectedKitId = null;
+    let filteredReportsCache = [];
+    const loadData = () => {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return { kits: [], shiftReports: [], transfers: [] };
+      try { return JSON.parse(raw); } catch (e) { return { kits: [], shiftReports: [], transfers: [] }; }
+    };
+    const saveData = (data) => {
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    };
+    const state = loadData();
+    // Helpers
+    const fmtDateTime = (d) => {
+      const date = new Date(d);
+      return date.toLocaleString();
+    };
+    const fmtDate = (d) => {
+      const date = new Date(d);
+      return date.toISOString().slice(0,10);
+    };
+    const openModal = (id) => {
+      document.getElementById(id).classList.add('active');
+    };
+    const closeModal = (id) => {
+      document.getElementById(id).classList.remove('active');
+    };
+    // Render Sidebar
+    const renderSidebar = () => {
+      const kitList = document.getElementById('kitList');
+      kitList.innerHTML = '';
+      if (!state.kits.length) {
+        kitList.innerHTML = '<div class="text-sm text-slate-500">No kits added yet.</div>';
+        return;
+      }
+      state.kits.forEach(kit => {
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-lg border cursor-pointer transition ${kit.id === selectedKitId ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-200'}`;
+        card.innerHTML = `
+          <div class="flex justify-between text-sm font-semibold text-slate-900">${kit.id}<span class="text-xs px-2 py-1 rounded-full ${kit.status==='OPEN' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'}">${kit.status}</span></div>
+          <div class="text-xs text-slate-500">Model: ${kit.model}</div>
+          <div class="text-xs text-slate-500">Remaining: ${kit.remainingQty}</div>
+          <div class="text-xs text-slate-500">Line: ${kit.issuedLine}</div>
+        `;
+        card.onclick = () => { selectedKitId = kit.id; renderKitDetail(); renderSidebar(); };
+        kitList.appendChild(card);
+      });
+    };
+    // Render Kit Detail
+    const renderKitDetail = () => {
+      const container = document.getElementById('kitDetailContent');
+      if (!selectedKitId) {
+        container.innerHTML = '<div class="text-slate-500">Select a kit from the sidebar to view details.</div>';
+        return;
+      }
+      const kit = state.kits.find(k => k.id === selectedKitId);
+      if (!kit) {
+        container.innerHTML = '<div class="text-slate-500">Kit not found.</div>';
+        return;
+      }
+      const totalUsed = kit.totalQty - kit.remainingQty;
+      const canTransfer = currentRole === 'Data Incharge' && kit.status === 'OPEN';
+      const canClose = currentRole === 'Data Incharge' && kit.status === 'OPEN' && kit.remainingQty === 0;
+      container.innerHTML = `
+        <div class="flex justify-between items-start gap-4">
+          <div>
+            <div class="text-lg font-semibold text-slate-900">Kit ${kit.id}</div>
+            <p class="text-sm text-slate-500">Model: ${kit.model}</p>
+            <p class="text-sm text-slate-500">Issued Line: ${kit.issuedLine}</p>
+            <p class="text-sm text-slate-500">Issue Date: ${fmtDateTime(kit.issueDate)}</p>
+          </div>
+          <div class="flex gap-2">
+            ${canTransfer ? '<button id="transferBtn" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">Transfer Remaining Kit to Other Line</button>' : ''}
+            ${canClose ? '<button id="closeKitBtn" class="px-3 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900">Close Kit</button>' : ''}
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <p class="text-xs text-slate-500">Total Quantity</p>
+            <p class="text-lg font-semibold text-slate-900">${kit.totalQty}</p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <p class="text-xs text-slate-500">Total Used Quantity</p>
+            <p class="text-lg font-semibold text-slate-900">${totalUsed}</p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <p class="text-xs text-slate-500">Remaining Quantity</p>
+            <p class="text-lg font-semibold text-slate-900">${kit.remainingQty}</p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <p class="text-xs text-slate-500">Active Lines</p>
+            <p class="text-lg font-semibold text-slate-900">${kit.activeLines.join(', ')}</p>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <p class="text-xs text-slate-500">Status</p>
+            <p class="text-lg font-semibold ${kit.status === 'OPEN' ? 'text-blue-700' : 'text-slate-700'}">${kit.status}</p>
+          </div>
+        </div>
+      `;
+      if (canTransfer) {
+        document.getElementById('transferBtn').onclick = () => openTransferModal(kit);
+      }
+      if (canClose) {
+        document.getElementById('closeKitBtn').onclick = () => closeKit(kit.id);
+      }
+    };
+    const openTransferModal = (kit) => {
+      document.getElementById('transferKitId').value = kit.id;
+      document.getElementById('transferModel').value = kit.model;
+      document.getElementById('transferFrom').value = kit.issuedLine;
+      document.getElementById('transferTo').value = '';
+      document.getElementById('transferQty').value = kit.remainingQty;
+      openModal('transferModal');
+    };
+    const closeKit = (kitId) => {
+      const kit = state.kits.find(k => k.id === kitId);
+      if (!kit) return;
+      if (kit.remainingQty !== 0) return;
+      kit.status = 'CLOSED';
+      saveData(state);
+      renderSidebar();
+      renderKitDetail();
+      renderLineLeaderKitOptions();
+    };
+    // Line Leader Dropdown
+    const renderLineLeaderKitOptions = () => {
+      const select = document.getElementById('kitSelect');
+      if (!select) return;
+      select.innerHTML = '';
+      const openKits = state.kits.filter(k => k.status === 'OPEN' && k.remainingQty > 0);
+      if (!openKits.length) {
+        select.innerHTML = '<option value="">No open kits available</option>';
+        return;
+      }
+      select.innerHTML = '<option value="">Select Kit</option>' + openKits.map(k => `<option value="${k.id}">${k.id} - ${k.model} (Remaining: ${k.remainingQty})</option>`).join('');
+    };
+    // Manager Stats
+    const renderManagerStats = () => {
+      const totalProduction = state.shiftReports.reduce((sum, r) => sum + Number(r.quantityUsed || 0), 0);
+      const activeKits = state.kits.filter(k => k.status === 'OPEN').length;
+      const closedKits = state.kits.filter(k => k.status === 'CLOSED').length;
+      document.getElementById('totalProduction').textContent = totalProduction;
+      document.getElementById('activeKits').textContent = activeKits;
+      document.getElementById('closedKits').textContent = closedKits;
+    };
+    // Reports Table
+    const renderReportsTable = (rows = state.shiftReports) => {
+      const tbody = document.getElementById('reportTableBody');
+      tbody.innerHTML = '';
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-3 py-3 text-center text-slate-500">No records found.</td></tr>';
+        return;
+      }
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-100';
+        tr.innerHTML = `
+          <td class="px-3 py-2">${fmtDate(r.date)}</td>
+          <td class="px-3 py-2">${r.line}</td>
+          <td class="px-3 py-2">${r.leader}</td>
+          <td class="px-3 py-2">${r.kitId}</td>
+          <td class="px-3 py-2">${r.model}</td>
+          <td class="px-3 py-2">${r.quantityUsed}</td>
+          <td class="px-3 py-2">${r.remainingAfter}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      filteredReportsCache = rows;
+    };
+    // Login Handling
+    const showMain = () => {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('header').style.display = 'block';
+      document.getElementById('mainLayout').classList.remove('hidden');
+      document.getElementById('currentRoleDisplay').textContent = currentRole;
+      document.getElementById('dataInchargeView').classList.toggle('hidden', currentRole !== 'Data Incharge');
+      document.getElementById('lineLeaderView').classList.toggle('hidden', currentRole !== 'Line Leader');
+      document.getElementById('managerView').classList.toggle('hidden', currentRole !== 'Manager');
+      renderSidebar();
+      renderKitDetail();
+      renderLineLeaderKitOptions();
+      renderManagerStats();
+      renderReportsTable();
+    };
+    document.querySelectorAll('.roleBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentRole = btn.dataset.role;
+        showMain();
+      });
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      currentRole = null;
+      selectedKitId = null;
+      document.getElementById('loginSection').style.display = 'flex';
+      document.getElementById('header').style.display = 'none';
+      document.getElementById('mainLayout').classList.add('hidden');
+    });
+    // Add Kit
+    document.getElementById('addKitBtn').addEventListener('click', () => openModal('addKitModal'));
+    document.getElementById('addKitForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('kitIdInput').value.trim();
+      const model = document.getElementById('modelInput').value.trim();
+      const totalQty = Number(document.getElementById('totalQtyInput').value);
+      const issuedLine = document.getElementById('issuedLineInput').value;
+      if (!id || !model || !totalQty || !issuedLine) return;
+      if (state.kits.find(k => k.id === id)) {
+        alert('Kit ID already exists.');
+        return;
+      }
+      const kit = {
+        id,
+        model,
+        totalQty,
+        remainingQty: totalQty,
+        issuedLine,
+        issueDate: new Date().toISOString(),
+        status: 'OPEN',
+        activeLines: [issuedLine],
+        transfers: []
+      };
+      state.kits.push(kit);
+      saveData(state);
+      closeModal('addKitModal');
+      document.getElementById('addKitForm').reset();
+      selectedKitId = kit.id;
+      renderSidebar();
+      renderKitDetail();
+      renderLineLeaderKitOptions();
+      renderManagerStats();
+    });
+    // Transfer
+    document.getElementById('transferForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const kitId = document.getElementById('transferKitId').value;
+      const toLine = document.getElementById('transferTo').value;
+      const qty = Number(document.getElementById('transferQty').value);
+      const kit = state.kits.find(k => k.id === kitId);
+      if (!kit || kit.status !== 'OPEN') return;
+      if (!toLine) return;
+      if (qty < 0 || qty > kit.remainingQty) {
+        alert('Transfer quantity must be between 0 and remaining quantity.');
+        return;
+      }
+      const fromLine = kit.issuedLine;
+      kit.issuedLine = toLine;
+      if (!kit.activeLines.includes(toLine)) kit.activeLines.push(toLine);
+      state.transfers.push({ kitId, model: kit.model, fromLine, toLine, qty, date: new Date().toISOString() });
+      saveData(state);
+      closeModal('transferModal');
+      renderSidebar();
+      renderKitDetail();
+    });
+    // Shift Submission
+    document.getElementById('shiftForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const line = document.getElementById('lineSelect').value;
+      const leader = document.getElementById('leaderName').value.trim();
+      const kitId = document.getElementById('kitSelect').value;
+      const inputUsed = Number(document.getElementById('inputUsed').value);
+      const output = Number(document.getElementById('outputQty').value);
+      const rejection = Number(document.getElementById('rejectionQty').value);
+      const semi = Number(document.getElementById('semiQty').value);
+      const message = document.getElementById('shiftMessage');
+      message.textContent = '';
+      message.className = 'text-sm font-medium';
+      if (!line || !leader || !kitId) return;
+      if (output + rejection + semi !== inputUsed) {
+        message.textContent = 'Validation failed: Output + Rejection + Semi-FG must equal Input Used.';
+        message.classList.add('text-red-600');
+        return;
+      }
+      const kit = state.kits.find(k => k.id === kitId && k.status === 'OPEN');
+      if (!kit) {
+        message.textContent = 'Selected kit unavailable.';
+        message.classList.add('text-red-600');
+        return;
+      }
+      if (inputUsed > kit.remainingQty) {
+        message.textContent = 'Input Used exceeds remaining quantity.';
+        message.classList.add('text-red-600');
+        return;
+      }
+      kit.remainingQty -= inputUsed;
+      if (!kit.activeLines.includes(line)) kit.activeLines.push(line);
+      const report = {
+        date: new Date().toISOString(),
+        line,
+        leader,
+        kitId,
+        model: kit.model,
+        quantityUsed: inputUsed,
+        remainingAfter: kit.remainingQty
+      };
+      state.shiftReports.push(report);
+      saveData(state);
+      message.textContent = 'Shift entry saved successfully.';
+      message.classList.add('text-emerald-600');
+      document.getElementById('shiftForm').reset();
+      renderSidebar();
+      renderKitDetail();
+      renderLineLeaderKitOptions();
+      renderManagerStats();
+      renderReportsTable();
+    });
+    // Filters
+    document.getElementById('applyFilter').addEventListener('click', () => {
+      const dateVal = document.getElementById('filterDate').value;
+      const lineVal = document.getElementById('filterLine').value;
+      let rows = state.shiftReports;
+      if (dateVal) rows = rows.filter(r => fmtDate(r.date) === dateVal);
+      if (lineVal) rows = rows.filter(r => r.line === lineVal);
+      renderReportsTable(rows);
+    });
+    // Export CSV
+    document.getElementById('exportCsv').addEventListener('click', () => {
+      const rows = filteredReportsCache.length ? filteredReportsCache : state.shiftReports;
+      if (!rows.length) return;
+      const header = ['Date','Line','Line Leader Name','Kit ID','Model','Quantity Used','Remaining Quantity'];
+      const csvRows = [header.join(',')];
+      rows.forEach(r => {
+        csvRows.push([fmtDate(r.date), r.line, r.leader, r.kitId, r.model, r.quantityUsed, r.remainingAfter].join(','));
+      });
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kittrack_pro.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+    // Initial render if needed
+    renderSidebar();
+    renderLineLeaderKitOptions();
+    renderManagerStats();
+    renderReportsTable();
+  </script>
 </body>
 </html>
